@@ -14,7 +14,6 @@ This Terraform module creates a complete VPC infrastructure in AWS with public, 
 - Sets up Internet Gateway for public subnets
 - Creates route tables for all subnet types
 - Configures security groups
-- Supports CloudWAN integration
 - Implements proper tagging strategy
 
 ## CIDR Block Structure
@@ -56,14 +55,8 @@ module "vpc" {
   name = "my-vpc"
   cidr = "10.0.0.0/16"
 
-  azs             = ["us-west-2a", "us-west-2b", "us-west-2c"]
-  private_subnets = ["10.0.0.0/18", "10.0.64.0/18", "10.0.128.0/18"]
-  public_subnets  = ["10.0.0.0/21", "10.0.8.0/21", "10.0.16.0/21"]
-  database_subnets = ["10.0.24.0/21", "10.0.32.0/21", "10.0.40.0/21"]
-  protected_subnets = ["10.0.0.0/24", "10.0.1.0/24", "10.0.2.0/24"]
-
   enable_nat_gateway = true
-  single_nat_gateway = true
+  create_igw        = true
 
   tags = {
     Environment = "production"
@@ -72,7 +65,7 @@ module "vpc" {
 }
 ```
 
-### Advanced Usage with CloudWAN
+### Adding VPC Flow Logs
 
 ```hcl
 module "vpc" {
@@ -81,18 +74,15 @@ module "vpc" {
   name = "my-vpc"
   cidr = "10.0.0.0/16"
 
-  # CloudWAN Configuration
-  cloudwan_core_network_id = "cn-1234567890"
-  cloudwan_segment_name    = "prod-segment"
+  enable_nat_gateway = true
+  create_igw        = true
 
   # Enable VPC Flow Logs
   enable_flow_log = true
   flow_log_destination_type = "cloud-watch-logs"
   flow_log_cloudwatch_log_group_retention_in_days = 30
-
-  # Additional Security
-  enable_dns_hostnames = true
-  enable_dns_support   = true
+  create_flow_log_cloudwatch_log_group = true
+  create_flow_log_cloudwatch_iam_role = true
 
   tags = {
     Environment = "production"
@@ -105,38 +95,53 @@ module "vpc" {
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| name | Name to be used on all the resources as identifier | `string` | `null` | no |
-| cidr | The CIDR block for the VPC | `string` | n/a | yes |
-| azs | A list of availability zones in the region | `list(string)` | `[]` | no |
-| private_subnets | A list of private subnets inside the VPC | `list(string)` | `[]` | no |
-| public_subnets | A list of public subnets inside the VPC | `list(string)` | `[]` | no |
-| database_subnets | A list of database subnets inside the VPC | `list(string)` | `[]` | no |
-| protected_subnets | A list of protected subnets inside the VPC | `list(string)` | `[]` | no |
+| name | Name of the VPC. If not provided, will use 'jo-vpc-{region}' | `string` | `null` | no |
+| cidr | Base CIDR block for the VPC. Must be a /16 CIDR block | `string` | n/a | yes |
+| create_igw | Controls if an Internet Gateway is created for public subnets | `bool` | `false` | no |
 | enable_nat_gateway | Should be true if you want to provision NAT Gateways for each of your private networks | `bool` | `false` | no |
-| single_nat_gateway | Should be true if you want to provision a single shared NAT Gateway across all of your private networks | `bool` | `false` | no |
 | enable_flow_log | Whether or not to enable VPC Flow Logs | `bool` | `false` | no |
-| cloudwan_core_network_id | The ID of the CloudWAN core network | `string` | `null` | no |
+| tags | A map of tags to add to all resources | `map(string)` | `{}` | no |
+| vpc_tags | Additional tags for the VPC | `map(string)` | `{}` | no |
+| public_subnet_tags | Additional tags for the public subnets | `map(string)` | `{}` | no |
+| private_subnet_tags | Additional tags for the private subnets | `map(string)` | `{}` | no |
+| database_subnet_tags | Additional tags for the database subnets | `map(string)` | `{}` | no |
+| intra_subnet_tags | Additional tags for the intra subnets | `map(string)` | `{}` | no |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
 | vpc_id | The ID of the VPC |
-| private_subnets | List of IDs of private subnets |
-| public_subnets | List of IDs of public subnets |
-| database_subnets | List of IDs of database subnets |
-| protected_subnets | List of IDs of protected subnets |
-| nat_gateway_ids | List of NAT Gateway IDs |
-| nat_public_ips | List of Elastic IPs created for NAT Gateways |
+| vpc_arn | The ARN of the VPC |
 | vpc_cidr_block | The CIDR block of the VPC |
+| default_security_group_id | The ID of the security group created by default on VPC creation |
+| default_network_acl_id | The ID of the default network ACL |
+| default_route_table_id | The ID of the default route table |
+| vpc_enable_dns_support | Whether or not the VPC has DNS support |
+| vpc_main_route_table_id | The ID of the main route table associated with this VPC |
+| public_subnets | List of IDs of public subnets |
+| public_subnet_arns | List of ARNs of public subnets |
+| public_subnets_cidr_blocks | List of cidr_blocks of public subnets |
+| public_route_table_ids | List of IDs of public route tables |
+| private_subnets | List of IDs of private subnets |
+| private_subnet_arns | List of ARNs of private subnets |
+| private_subnets_cidr_blocks | List of cidr_blocks of private subnets |
+| private_route_table_ids | List of IDs of private route tables |
+| database_subnets | List of IDs of database subnets |
+| database_subnet_arns | List of ARNs of database subnets |
+| database_subnets_cidr_blocks | List of cidr_blocks of database subnets |
+| database_route_table_ids | List of IDs of database route tables |
+| protected_subnets | List of IDs of protected subnets |
+| protected_subnet_arns | List of ARNs of protected subnets |
+| protected_subnets_cidr_blocks | List of CIDRs of protected subnets |
+| protected_route_table_ids | List of IDs of protected route tables |
 
 ## Notes
 
-- The module automatically calculates subnet CIDR blocks if not explicitly provided
+- The module automatically calculates subnet CIDR blocks
 - NAT Gateways are created in the first availability zone by default
 - Each subnet type has its own route table
 - Security groups are created with basic rules and can be customized
-- The module supports CloudWAN integration for global networking
 
 ## Best Practices
 
@@ -144,8 +149,7 @@ module "vpc" {
 2. Consider using a single NAT Gateway for cost optimization in non-production environments
 3. Enable VPC Flow Logs for security monitoring
 4. Use appropriate tags for resource management
-5. Consider using CloudWAN for multi-region deployments
-6. Review and adjust security group rules according to your needs
+5. Review and adjust security group rules according to your needs
 
 ## License
 
