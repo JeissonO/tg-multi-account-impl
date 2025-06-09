@@ -6,11 +6,11 @@ This repository contains the Terraform infrastructure code for managing resource
 
 ```sh
 tg-multi-account-impl/
-├── accounts/                # Account-specific configurations
+├── deployments/             # Deployments folder
 │   ├── dev/                 # Development account configuration
 │   ├── prod/                # Production account configuration
 │   └── shared/              # Shared services account configuration
-│       ├── env.hcl                  # Environment file to manage account/environment specific configurations
+│       ├── account.hcl              # Account file to manage account/environment specific configurations
 │       └── <aws-region>             # Region Folder / identifies the aws home region where deployments will be executed
 │           ├── region.hcl           # The region configuration file / identifies the aws home region where deployments will be executed
 │           └── deployment/          # Deployment specific folder 

@@ -1,13 +1,13 @@
 locals {
-  # Read environment variables from env.hcl file in each account folder
-  env_vars    = read_terragrunt_config(find_in_parent_folders("env.hcl"))
-  region_vars = read_terragrunt_config(find_in_parent_folders("region.hcl"))
+  # Read environment variables from account.hcl file in each account folder
+  account_vars = read_terragrunt_config(find_in_parent_folders("account.hcl"))
+  region_vars  = read_terragrunt_config(find_in_parent_folders("region.hcl"))
 
   # Shared services account ID - and provider config
   shared_services_account_id = "111111111111"
-  aws_assume_role_arn        = local.env_vars.locals.aws_assume_role_arn
-  aws_account_id             = local.env_vars.locals.aws_account_id
-  environment                = local.env_vars.locals.environment
+  aws_assume_role_arn        = local.account_vars.locals.aws_assume_role_arn
+  aws_account_id             = local.account_vars.locals.aws_account_id
+  environment                = local.account_vars.locals.environment
   aws_region                 = local.region_vars.locals.aws_region
 
   # State bucket and DynamoDB table for state locking
