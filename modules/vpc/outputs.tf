@@ -42,6 +42,10 @@ output "vpc_main_route_table_id" {
   value       = module.vpc.vpc_main_route_table_id
 }
 
+output "vpc_subnets_azs" {
+  description = "List of availability zones for the VPC subnets"
+  value       = local.azs
+}
 ################################################################################
 # DHCP Options Set
 ################################################################################
