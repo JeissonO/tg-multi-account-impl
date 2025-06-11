@@ -23,6 +23,6 @@ locals {
 
   # Protected subnets (/24) - Second half, third quarter
   protected_subnets = [
-    for i in range(3) : cidrsubnet(local.base_cidr, 8, i + 31)
+    for i in range(3) : cidrsubnet(local.base_cidr, 8, i + 240)
   ]
 }
