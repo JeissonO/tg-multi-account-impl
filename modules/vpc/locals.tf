@@ -1,5 +1,5 @@
 locals {
-  azs = slice(data.aws_availability_zones.available.names, 0, 3)
+  azs = slice([for az in data.aws_availability_zones.available.names : az if can(regex("^[a-z]+-[a-z]+-[0-9][a-z]$", az))], 0, 3)
 
   vpc_name = var.name != null ? var.name : "jo-${data.aws_region.current.name}"
 
